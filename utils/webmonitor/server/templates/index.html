@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiffPG Monitor</title>
+    <style>
+        body {
+            display: flex; /* 使用 Flexbox 布局 */
+            overflow-x: auto; /* 当内容超过屏幕宽度时显示横向滚动条 */
+        }
+
+        #columns-container {
+            display: flex; /* 子项水平排列 */
+        }
+
+        .column {
+            width: 200px; /* 固定每个列的宽度 */
+            margin: 10px; /* 列之间的间距 */
+        }
+        
+        .tasklist {
+            list-style-type: none; /* 移除列表默认样式 */
+            padding: 0; /* 移除列表默认内边距 */
+            border: 1px solid #000000; /
+        }
+        .tasklist-success {
+            list-style-type: none; /* 移除列表默认样式 */
+            padding: 0; /* 移除列表默认内边距 */
+            border: 1px solid #000000; 
+            background-color: #7ff829;
+        }
+        .tasklist-fail {
+            list-style-type: none; /* 移除列表默认样式 */
+            padding: 0; /* 移除列表默认内边距 */
+            border: 1px solid #000000;
+            background-color: #ee2a2a;
+        }
+
+        .remove-button {
+            background-color: #ff0000;
+            color: #fff;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div>    
+        <h1>DiffPG Monitor</h1>
+        <div id="columns-container">
+            <!-- 列将会在这里动态添加 -->
+        </div>
+    </div>
+
+
+<script type="text/javascript" src="https://cdn.goeasy.io/goeasy-2.10.14.min.js"></script>
+<script type="text/javascript">
+    //初始化GoEasy对象
+    let goEasy = GoEasy.getInstance({
+        host: 'hangzhou.goeasy.io', //新加坡host：singapore.goeasy.io
+        appkey: "BS-4dea1eacc6754e02b63d31a94ab3e0ab", //替换为您的应用appkey
+        modules: ['pubsub']
+    });
+    //建立连接
+    goEasy.connect({
+        onSuccess: function () { //连接成功
+            console.log("GoEasy connect successfully.") //连接成功
+        },
+        onFailed: function (error) { //连接失败
+            console.log("Failed to connect GoEasy, code:" + error.code + ",error:" + error.content);
+        }
+    });
+    //订阅消息
+    goEasy.pubsub.subscribe({
+        channel: "test_channel",//替换为您自己的channel
+        onMessage: function (message) { //收到消息
+            console.log("Channel:" + message.channel + " content:" + message.content);
+            var msg = message.content.split('&');
+            updateMonitor(msg[0], msg[1], msg[2]);
+        },
+        onSuccess: function () {
+            console.log("Channel订阅成功。");
+        },
+        onFailed: function (error) {
+            console.log("Channel订阅失败, 错误编码：" + error.code + " 错误信息：" + error.content)
+        }
+    });
+
+ 
+    const maxListLength = 20; // 设置列表的最大长度
+    const recvTimeout = 60 * 1000; // 每个任务接收消息的最大间隔，超过认为失败，对应m3dpg_run_common中的等待时间
+
+    function getColumnId(taskName, taskMethod) {
+        return taskName + "_" + taskMethod;
+    }
+    function getColumnListId(taskName, taskMethod) {
+        return taskName + "_" + taskMethod + "_list";
+    }    
+    function getColumnTimerId(taskName, taskMethod) {
+        return taskName + "_" + taskMethod + "_timer";
+    }
+    
+    function updateMonitor(taskName, taskMethod, content) {
+        // 先看需不需要加一栏
+        var id = getColumnId(taskName, taskMethod);
+        var col = document.getElementById(id);
+        if(col == null) {
+            console.log("需要增加一栏");
+            addColumn(taskName, taskMethod); 
+        } 
+
+        // 找到该栏，更新列表
+        id = getColumnListId(taskName, taskMethod);
+        addElement(id, content);
+    }
+
+    function addElement(listId, content) {
+        var myList = document.getElementById(listId);
+        
+        // 如果列表长度超过最大长度，则移除第一个子元素
+        if (myList.children.length >= maxListLength) {
+            myList.removeChild(myList.children[0]);
+        }
+
+        // 创建一个新的列表项
+        var li = document.createElement("li");
+        
+        // 设置列表项的文本内容
+        var text = document.createTextNode(new Date().toLocaleString() + " " + content);
+        li.appendChild(text);
+        
+        // 将新的列表项添加到现有列表中
+        myList.appendChild(li);
+
+        myList.timer.reset(recvTimeout);
+        if(content.toLowerCase().startsWith("done")) {
+            myList.timer.stop();
+            myList.className = "tasklist-success";
+            var taskColId = listId.slice(0, -5); // 去掉最后的"_list"
+            console.log(taskColId + " done!");
+            // 已经是旧的内容了，更新id，找不到了就当做不存在
+            var tm = Date.now().toString();
+            document.getElementById(taskColId).id = tm;
+            myList.id = tm + "_list";
+        }
+    }
+
+
+    function addColumn(taskName, taskMethod) {
+        var columnsContainer = document.getElementById("columns-container");
+        var column = document.createElement("div");
+        column.className = "column";
+        column.id = getColumnId(taskName, taskMethod);
+        
+        var title = document.createElement("h3");
+        title.innerText = "name: " + taskName;
+        column.appendChild(title);
+        var title = document.createElement("h3");
+        title.innerText = "method: " + taskMethod;
+        column.appendChild(title);
+
+        // 列表主体
+        var ul = document.createElement("ul");
+        ul.className = "tasklist";
+        ul.id = getColumnListId(taskName, taskMethod);
+        // 定时器
+        var timer = new Timer(function() {
+            var ul = document.getElementById(getColumnListId(taskName, taskMethod));
+            ul.className = "tasklist-fail";
+            timer.stop();
+            console.log('task ' + column.id + " fail");
+            // 已经是旧的内容了，更新id，找不到了就当做不存在
+            var tm = Date.now().toString();
+            column.id = tm;
+            ul.id = tm + "_list";
+        }, recvTimeout);
+        ul.timer = timer; // 直接把timer弄成ul的一个属性，it just works
+        column.appendChild(ul);
+    
+        var removeButton = document.createElement("button");
+        removeButton.textContent = "删除列";
+        removeButton.className = "remove-button";
+        removeButton.onclick = function() {
+            removeColumn(column);
+        };
+        column.appendChild(removeButton);
+
+        columnsContainer.appendChild(column);
+    }
+
+    function removeColumn(column) {
+        var columnsContainer = document.getElementById("columns-container");
+        columnsContainer.removeChild(column);
+    }
+
+    // https://segmentfault.com/q/1010000042978347
+    function Timer(fn, t) {
+        var timerObj = setInterval(fn, t);
+
+        this.stop = function() {
+            if (timerObj) {
+                clearInterval(timerObj);
+                timerObj = null;
+            }
+            return this;
+        }
+
+        // start timer using current settings (if it's not already running)
+        this.start = function() {
+            if (!timerObj) {
+                this.stop();
+                timerObj = setInterval(fn, t);
+            }
+            return this;
+        }
+
+        // start with new or original interval, stop current interval
+        this.reset = function(newT = t) {
+            t = newT;
+            return this.stop().start();
+        }
+    }
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<scene version="0.6.0">
+	<!-- Image size -->
+	<default name="imgwidth" value="1280" />
+	<default name="imgheight" value="720" />
+	<!-- Image crop -->
+	<default name="crop_offset_x" value="0" />
+	<default name="crop_offset_y" value="0" />
+	<default name="crop_width" value="1280" />
+	<default name="crop_height" value="720" />
+	<default name="spp" value="32" />
+	<default name="ablation" value="0"/>
+	<default name="budgetType" value="spp" />
+	<default name="com" value="automatic" />
+	<default name="sppass" value="2" />
+	<default name="tmp" value="0" />
+	<default name="seq" value="double" />
+	<default name="amisbs" value="0" />
+	<default name="laz" value="false" />
+	<default name="trf" value="false" />
+	<default name="tra" value="false" />
+	<default name="reb" value="false" />
+	<default name="stp" value="1" />
+	<default name="adt" value="0" />
+	<default name="fgl" value="false" />
+	<default name="bbox_cx" value="0" />
+	<default name="bbox_cy" value="0" />
+	<default name="bbox_cz" value="0" />
+	<default name="bbox_sx" value="1" />
+	<default name="bbox_sy" value="1" />
+	<default name="bbox_sz" value="1" />
+	<default name="guiding_mis_weight_ad" value="0.5" />
+	<default name="decay_rate" value="1.0" />
+	<default name="iname" value="guided_path" />
+	<default name="spatialFilter_Primal" value="stochastic" />
+	<default name="spatialFilter_Adjoint" value="stochastic" />
+	<integrator type="$iname">
+		<boolean name="strictNormals" value="true" />
+		<integer name="maxDepth" value="16" />
+		<integer name="rrDepth" value="16" />
+		<integer name="sTreeThreshold" value="32000" />
+		<float name="dTreeThreshold" value="0.01" />
+		<string name="budgetType" value="$budgetType" />
+		<string name="spatialFilter_Primal" value="$spatialFilter_Primal" />
+		<string name="spatialFilter_Adjoint" value="$spatialFilter_Adjoint" />
+		<string name="directionalFilter" value="box" />
+		<string name="sampleCombination" value="$com" />
+		<integer name="amisBufferSize" value="$amisbs" />
+		<integer name="stepper" value="$stp" />
+		<integer name="adjointTarget" value="$adt" />
+		<string name="sampleAllocSeq" value="$seq" />
+		<boolean name="filteredGlints" value="$fgl" />
+		<float name="budget" value="$spp" />
+		<integer name="sppPerPass" value="$sppass" />
+		<float name="guiding_mis_weight_ad" value="$guiding_mis_weight_ad" />
+		<float name="decay_rate" value="$decay_rate" />
+		<float name="bbox_cx" value="$bbox_cx" />
+		<float name="bbox_cy" value="$bbox_cy" />
+		<float name="bbox_cz" value="$bbox_cz" />
+		<float name="bbox_sx" value="$bbox_sx" />
+		<float name="bbox_sy" value="$bbox_sy" />
+		<float name="bbox_sz" value="$bbox_sz" />
+	</integrator>
+	<sensor type="perspective">
+		<string name="fovAxis" value="smaller" />
+		<float name="nearClip" value="0.01" />
+		<float name="farClip" value="2800" />
+		<float name="focusDistance" value="1000" />
+		<transform name="toWorld">
+			<lookAt origin="0, 0, -0" target="0, 0, -0.0001" up="0, 1, 0" />
+		</transform>
+		<float name="fov" value="39.3077" />
+		<sampler type="deterministic">
+			<integer name="sampleCount" value="99999999" />
+		</sampler>
+		<film type="hdrfilm">
+			<integer name="width" value="$imgwidth" />
+			<integer name="height" value="$imgheight" />
+			<integer name="cropOffsetX" value="$crop_offset_x" />
+			<integer name="cropOffsetY" value="$crop_offset_y" />
+			<integer name="cropWidth" value="$crop_width" />
+			<integer name="cropHeight" value="$crop_height" />
+			<boolean name="banner" value="false" />
+			<rfilter type="gaussian" />
+		</film>
+	</sensor>
+    <shape type="obj">
+        <string name="filename" value="stdsphere.obj"/>
+        <transform name="toWorld">
+            <scale x="$bbox_sx" y="$bbox_sy" z="$bbox_sz"/>
+            <translate x="$bbox_cx" y="$bbox_cy" z="$bbox_cz"/>
+        </transform>
+    </shape>
+</scene>

@@ -1,0 +1,1 @@
+cp build/Release/plugins/*  build/Release/python/mitsuba/plugins/

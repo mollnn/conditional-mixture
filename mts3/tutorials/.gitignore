@@ -1,0 +1,16 @@
+.ipynb_checkpoints
+
+# Exclude files produced by the notebooks
+*.exr
+*.png
+*.jpg
+*.ply
+
+# Add back the files related to the scene data
+!scenes/textures/*.exr
+!scenes/textures/*.png
+!scenes/textures/*.jpg
+!scenes/meshes/*.ply
+
+# macOS
+\.DS_Store
